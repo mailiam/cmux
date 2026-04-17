@@ -315,6 +315,8 @@ private struct ClaudeHookParsedInput {
     let rawFallback: String?
     let sessionId: String?
     let cwd: String?
+    let workspaceId: String?
+    let surfaceId: String?
     let transcriptPath: String?
 }
 
@@ -12414,11 +12416,15 @@ struct CMUXCLI {
     ) throws {
         let subcommand = commandArgs.first?.lowercased() ?? "help"
         let hookArgs = Array(commandArgs.dropFirst())
-        let hookWsFlag = optionValue(hookArgs, name: "--workspace")
-        let workspaceArg = hookWsFlag ?? ProcessInfo.processInfo.environment["CMUX_WORKSPACE_ID"]
-        let surfaceArg = optionValue(hookArgs, name: "--surface") ?? (hookWsFlag == nil ? ProcessInfo.processInfo.environment["CMUX_SURFACE_ID"] : nil)
         let rawInput = String(data: FileHandle.standardInput.readDataToEndOfFile(), encoding: .utf8) ?? ""
         let parsedInput = parseClaudeHookInput(rawInput: rawInput)
+        let hookWsFlag = optionValue(hookArgs, name: "--workspace")
+        let workspaceArg = hookWsFlag
+            ?? parsedInput.workspaceId
+            ?? ProcessInfo.processInfo.environment["CMUX_WORKSPACE_ID"]
+        let surfaceArg = optionValue(hookArgs, name: "--surface")
+            ?? parsedInput.surfaceId
+            ?? (hookWsFlag == nil ? ProcessInfo.processInfo.environment["CMUX_SURFACE_ID"] : nil)
         let sessionStore = ClaudeHookSessionStore()
         telemetry.breadcrumb(
             "claude-hook.input",
@@ -13008,11 +13014,21 @@ struct CMUXCLI {
                 normalizedSingleLine(redactClaudeSensitiveSpans(trimmed)),
                 maxLength: 180
             )
-            return ClaudeHookParsedInput(object: nil, rawFallback: fallback, sessionId: nil, cwd: nil, transcriptPath: nil)
+            return ClaudeHookParsedInput(
+                object: nil,
+                rawFallback: fallback,
+                sessionId: nil,
+                cwd: nil,
+                workspaceId: nil,
+                surfaceId: nil,
+                transcriptPath: nil
+            )
         }
 
         let sessionId = extractClaudeHookSessionId(from: object)
         let cwd = extractClaudeHookCWD(from: object)
+        let workspaceId = extractClaudeHookWorkspaceId(from: object)
+        let surfaceId = extractClaudeHookSurfaceId(from: object)
         let transcriptPath = firstString(in: object, keys: ["transcript_path", "transcriptPath"])
         let compactObject = compactClaudeHookObject(object)
         return ClaudeHookParsedInput(
@@ -13020,6 +13036,8 @@ struct CMUXCLI {
             rawFallback: nil,
             sessionId: sessionId,
             cwd: cwd,
+            workspaceId: workspaceId,
+            surfaceId: surfaceId,
             transcriptPath: transcriptPath
         )
     }
@@ -13190,6 +13208,46 @@ struct CMUXCLI {
         if let context = object["context"] as? [String: Any],
            let cwd = firstString(in: context, keys: cwdKeys) {
             return cwd
+        }
+        return nil
+    }
+
+    private func extractClaudeHookWorkspaceId(from object: [String: Any]) -> String? {
+        let workspaceKeys = ["workspace_id", "workspaceId", "tab_id", "tabId", "workspace"]
+        if let workspaceId = firstString(in: object, keys: workspaceKeys) {
+            return workspaceId
+        }
+        if let nested = object["notification"] as? [String: Any],
+           let workspaceId = firstString(in: nested, keys: workspaceKeys) {
+            return workspaceId
+        }
+        if let nested = object["data"] as? [String: Any],
+           let workspaceId = firstString(in: nested, keys: workspaceKeys) {
+            return workspaceId
+        }
+        if let context = object["context"] as? [String: Any],
+           let workspaceId = firstString(in: context, keys: workspaceKeys) {
+            return workspaceId
+        }
+        return nil
+    }
+
+    private func extractClaudeHookSurfaceId(from object: [String: Any]) -> String? {
+        let surfaceKeys = ["surface_id", "surfaceId", "panel_id", "panelId", "surface", "panel"]
+        if let surfaceId = firstString(in: object, keys: surfaceKeys) {
+            return surfaceId
+        }
+        if let nested = object["notification"] as? [String: Any],
+           let surfaceId = firstString(in: nested, keys: surfaceKeys) {
+            return surfaceId
+        }
+        if let nested = object["data"] as? [String: Any],
+           let surfaceId = firstString(in: nested, keys: surfaceKeys) {
+            return surfaceId
+        }
+        if let context = object["context"] as? [String: Any],
+           let surfaceId = firstString(in: context, keys: surfaceKeys) {
+            return surfaceId
         }
         return nil
     }
@@ -13834,12 +13892,13 @@ struct CMUXCLI {
         telemetry.breadcrumb("\(def.name)-hook.\(subcommand)")
 
         // Workspace/surface resolution: prefer --workspace/--surface flags, then session store, then env
-        let hookWsFlag = optionValue(hookArgs, name: "--workspace")
-        let workspaceArg = hookWsFlag ?? env["CMUX_WORKSPACE_ID"]
-        let surfaceArg = optionValue(hookArgs, name: "--surface") ?? (hookWsFlag == nil ? env["CMUX_SURFACE_ID"] : nil)
-
         let rawInput = String(data: FileHandle.standardInput.readDataToEndOfFile(), encoding: .utf8) ?? ""
         let input = parseClaudeHookInput(rawInput: rawInput)
+        let hookWsFlag = optionValue(hookArgs, name: "--workspace")
+        let workspaceArg = hookWsFlag ?? input.workspaceId ?? env["CMUX_WORKSPACE_ID"]
+        let surfaceArg = optionValue(hookArgs, name: "--surface")
+            ?? input.surfaceId
+            ?? (hookWsFlag == nil ? env["CMUX_SURFACE_ID"] : nil)
 
         let store = ClaudeHookSessionStore(
             processEnv: env.merging(
@@ -13848,7 +13907,7 @@ struct CMUXCLI {
             )
         )
 
-        let sessionId = input.sessionId ?? env["CMUX_SURFACE_ID"] ?? ""
+        let sessionId = input.sessionId ?? input.surfaceId ?? env["CMUX_SURFACE_ID"] ?? ""
         let action = Self.subcommandActions[subcommand] ?? .noop
         let pidKey = "\(def.statusKey).\(sessionId.isEmpty ? "default" : sessionId)"
 
