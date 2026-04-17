@@ -69,6 +69,12 @@ enum ReactGrabPastebackNotificationKey {
     static let browserPanelId = "browserPanelId"
     static let returnPanelId = "returnPanelId"
     static let content = "content"
+    static let context = "context"
+}
+
+enum ReactGrabPastebackContextKey {
+    static let workspaceId = "workspace_id"
+    static let surfaceId = "surface_id"
 }
 
 private enum ReactGrabPastebackContentFilter {
@@ -312,6 +318,10 @@ extension BrowserPanel {
                     ReactGrabPastebackNotificationKey.browserPanelId: id,
                     ReactGrabPastebackNotificationKey.returnPanelId: returnPanelId,
                     ReactGrabPastebackNotificationKey.content: filteredContent,
+                    ReactGrabPastebackNotificationKey.context: [
+                        ReactGrabPastebackContextKey.workspaceId: workspaceId.uuidString,
+                        ReactGrabPastebackContextKey.surfaceId: returnPanelId.uuidString,
+                    ],
                 ]
             )
         }
