@@ -13907,7 +13907,7 @@ struct CMUXCLI {
             )
         )
 
-        let sessionId = input.sessionId ?? input.surfaceId ?? env["CMUX_SURFACE_ID"] ?? ""
+        let sessionId = input.sessionId ?? env["CMUX_SURFACE_ID"] ?? ""
         let action = Self.subcommandActions[subcommand] ?? .noop
         let pidKey = "\(def.statusKey).\(sessionId.isEmpty ? "default" : sessionId)"
 
