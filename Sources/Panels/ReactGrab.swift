@@ -320,7 +320,7 @@ extension BrowserPanel {
                     ReactGrabPastebackNotificationKey.content: filteredContent,
                     ReactGrabPastebackNotificationKey.context: [
                         ReactGrabPastebackContextKey.workspaceId: workspaceId.uuidString,
-                        ReactGrabPastebackContextKey.surfaceId: returnPanelId.uuidString,
+                        ReactGrabPastebackContextKey.surfaceId: id.uuidString,
                     ],
                 ]
             )

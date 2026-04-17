@@ -227,7 +227,7 @@ final class BrowserPanelReactGrabBridgeTests: XCTestCase {
             XCTAssertEqual(notification.userInfo?[ReactGrabPastebackNotificationKey.content] as? String, "<button>Save</button>")
             let context = notification.userInfo?[ReactGrabPastebackNotificationKey.context] as? [String: String]
             XCTAssertEqual(context?[ReactGrabPastebackContextKey.workspaceId], workspaceId.uuidString)
-            XCTAssertEqual(context?[ReactGrabPastebackContextKey.surfaceId], terminalId.uuidString)
+            XCTAssertEqual(context?[ReactGrabPastebackContextKey.surfaceId], browserId.uuidString)
             expectation.fulfill()
         }
         defer { NotificationCenter.default.removeObserver(observer) }
@@ -261,7 +261,7 @@ final class BrowserPanelReactGrabBridgeTests: XCTestCase {
             XCTAssertEqual(notification.userInfo?[ReactGrabPastebackNotificationKey.content] as? String, "<button>Save</button>")
             let context = notification.userInfo?[ReactGrabPastebackNotificationKey.context] as? [String: String]
             XCTAssertEqual(context?[ReactGrabPastebackContextKey.workspaceId], workspaceId.uuidString)
-            XCTAssertEqual(context?[ReactGrabPastebackContextKey.surfaceId], terminalId.uuidString)
+            XCTAssertEqual(context?[ReactGrabPastebackContextKey.surfaceId], browserId.uuidString)
             expectation.fulfill()
         }
         defer { NotificationCenter.default.removeObserver(observer) }
@@ -300,7 +300,7 @@ final class BrowserPanelReactGrabBridgeTests: XCTestCase {
             XCTAssertEqual(notification.userInfo?[ReactGrabPastebackNotificationKey.content] as? String, "<button>Save</button>")
             let context = notification.userInfo?[ReactGrabPastebackNotificationKey.context] as? [String: String]
             XCTAssertEqual(context?[ReactGrabPastebackContextKey.workspaceId], workspaceId.uuidString)
-            XCTAssertEqual(context?[ReactGrabPastebackContextKey.surfaceId], terminalId.uuidString)
+            XCTAssertEqual(context?[ReactGrabPastebackContextKey.surfaceId], browserId.uuidString)
             expectation.fulfill()
         }
         defer { NotificationCenter.default.removeObserver(observer) }
@@ -354,6 +354,7 @@ final class BrowserPanelReactGrabBridgeTests: XCTestCase {
         let workspaceId = UUID()
         let terminalId = UUID()
         let panel = BrowserPanel(workspaceId: workspaceId)
+        let browserId = panel.id
         let expectation = expectation(description: "react grab pasteback notification")
         let rawContent = "<button>Sa\u{202E}v\u{200B}e</button>\u{2069}\n"
 
@@ -365,7 +366,7 @@ final class BrowserPanelReactGrabBridgeTests: XCTestCase {
             XCTAssertEqual(notification.userInfo?[ReactGrabPastebackNotificationKey.content] as? String, "<button>Save</button>\n")
             let context = notification.userInfo?[ReactGrabPastebackNotificationKey.context] as? [String: String]
             XCTAssertEqual(context?[ReactGrabPastebackContextKey.workspaceId], workspaceId.uuidString)
-            XCTAssertEqual(context?[ReactGrabPastebackContextKey.surfaceId], terminalId.uuidString)
+            XCTAssertEqual(context?[ReactGrabPastebackContextKey.surfaceId], browserId.uuidString)
             expectation.fulfill()
         }
         defer { NotificationCenter.default.removeObserver(observer) }
